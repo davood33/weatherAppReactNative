@@ -1,18 +1,23 @@
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, ActivityIndicator } from "react-native";
 import * as Location from "expo-location";
 import WeatherInfo from "./components/WeatherInfo";
+import UnitsPicker from "./components/UnitsPicker";
 const WEATHER_API_KEY = "e351360858f6d3bb28f204f977f68575";
 const WEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5/weather?";
 export default function App() {
-  const [errorMessage, setErrorMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState(null);
   const [currentWeather, setCurrentWeather] = useState(null);
   const [unitSystem, setUnitSystem] = useState("metric");
   useEffect(() => {
-    load();
-  }, []);
-  async function load() {
+    let isMount = true;
+    load(isMount);
+  }, [unitSystem]);
+  async function load(isMount) {
+    if (isMount) {
+      setCurrentWeather(null);
+    }
     try {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
@@ -37,13 +42,20 @@ export default function App() {
     }
   }
   if (currentWeather) {
-    const {
-      main: { temp },
-    } = currentWeather;
     return (
       <View style={styles.container}>
         <View style={styles.main}>
-          <WeatherInfo currentWeather={currentWeather}/>
+          <UnitsPicker unitSystem={unitSystem} setUnitSystem={setUnitSystem} />
+          <WeatherInfo currentWeather={currentWeather} />
+          <StatusBar style="auto" />
+        </View>
+      </View>
+    );
+  } else if (errorMessage) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.main}>
+          <Text>{errorMessage}</Text>
           <StatusBar style="auto" />
         </View>
       </View>
@@ -51,10 +63,8 @@ export default function App() {
   } else {
     return (
       <View style={styles.container}>
-        <View style={styles.main}>
-          <Text>{errorMessage}</Text>
-          <StatusBar style="auto" />
-        </View>
+        <ActivityIndicator color={'black'}/>
+        <StatusBar style="auto" />
       </View>
     );
   }
@@ -66,7 +76,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   main: {
-    flex: 1,
+    display: "flex",
+    flexDirection: "column",
     alignItems: "center",
+    justifyContent: "center",
+    height: "100%",
+    position: "relative",
   },
 });
